@@ -1,0 +1,20 @@
+.user-menu-button {
+  border-radius: 8px;
+  text-transform: none;
+  font-size: 0.875rem;
+  padding: 4px 12px;
+  min-height: 32px;
+  box-shadow: none;
+}
+
+.user-menu-button:hover {
+  background-color: rgba(0, 0, 0, 0.04);
+}
+
+.user-menu-paper {
+  margin-top: 8px;
+}
+
+.user-menu-icon {
+  margin-right: 8px;
+}
