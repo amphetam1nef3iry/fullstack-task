@@ -6,7 +6,7 @@ app.use(cors());
 app.use(express.json());
 
 // Константы
-const PORT = 5000;
+const PORT = process.env.PORT || 5000;
 const ITEMS_COUNT = 1000000;
 const PAGE_SIZE = 20;
 
