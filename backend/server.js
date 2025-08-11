@@ -92,13 +92,26 @@ app.post('/api/update-order', (req, res) => {
 // Сохранение состояния
 app.post('/api/save-state', (req, res) => {
   try {
-    const { selectedItems = [] } = req.body;
+    const { selectedItems = [], sortedItems = [] } = req.body;
     
     state.selected = new Set(selectedItems);
     
+    // Сохраняем изменения порядка только если переданы sortedItems
+    if (sortedItems && sortedItems.length > 0) {
+      // Проверяем, что все элементы существуют в исходных данных
+      const isValid = sortedItems.every(item => state.items.includes(item));
+      if (isValid) {
+        state.lastSorted = sortedItems;
+      } else {
+        return res.status(400).json({ success: false, error: 'Invalid items in sorted array' });
+      }
+    }
+    
     res.json({ 
       success: true,
-      message: 'State saved successfully'
+      message: 'State saved successfully',
+      selectedCount: state.selected.size,
+      sortedCount: state.lastSorted.length
     });
   } catch (error) {
     console.error('Error saving state:', error);
