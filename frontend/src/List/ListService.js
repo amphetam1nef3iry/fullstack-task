@@ -59,10 +59,11 @@ const ListService = {
   },
 
   // Сохранение состояния
-  saveState: async (apiUrl, selectedItems) => {
+  saveState: async (apiUrl, selectedItems, searchTerm = '') => {
     try {
       await axios.post(`${apiUrl}/save-state`, {
-        selectedItems: Array.from(selectedItems)
+        selectedItems: Array.from(selectedItems),
+        searchTerm
       }, {
         timeout: 10000 // 10 секунд таймаут
       });
