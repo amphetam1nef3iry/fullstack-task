@@ -37,15 +37,25 @@ const List = ({ apiUrl }) => {
     const loadInitialData = async () => {
       setLoading(true);
       try {
-        const [selectedItemsData, allItemsIdsData, itemsData] = await Promise.all([
-          ListService.getSelectedItems(apiUrl),
-          ListService.getAllItemsIds(apiUrl),
-          ListService.getItems(apiUrl, 1)
+        const [initialState, allItemsIdsData] = await Promise.all([
+          ListService.getInitialState(apiUrl),
+          ListService.getAllItemsIds(apiUrl)
         ]);
 
-        setSelectedItems(new Set(selectedItemsData));
+        setSelectedItems(new Set(initialState.selected));
         setAllItemsIds(allItemsIdsData);
-        setItems(itemsData);
+        
+        // Если был сохранен поисковый запрос, устанавливаем его
+        if (initialState.lastSearch) {
+          setSearchTerm(initialState.lastSearch);
+          // Загружаем элементы с учетом сохраненного поиска
+          const itemsData = await ListService.getItems(apiUrl, 1, initialState.lastSearch);
+          setItems(itemsData);
+        } else {
+          // Иначе загружаем первые элементы
+          const itemsData = await ListService.getItems(apiUrl, 1);
+          setItems(itemsData);
+        }
       } catch (error) {
         showNotification(t('loadError'), 'error');
         console.error('Initial load error:', error);
@@ -80,7 +90,7 @@ const List = ({ apiUrl }) => {
 
   const saveState = async () => {
     try {
-      await ListService.saveState(apiUrl, Array.from(selectedItems));
+      await ListService.saveState(apiUrl, selectedItems, searchTerm);
       showNotification(t('saveSuccess'));
     } catch (error) {
       showNotification(t('saveError'), 'error');
@@ -92,7 +102,8 @@ const List = ({ apiUrl }) => {
     try {
       await ListService.resetState(apiUrl);
       setSelectedItems(new Set());
-      await fetchItems(1, searchTerm, true);
+      setSearchTerm('');
+      await fetchItems(1, '', true);
       showNotification(t('resetSuccess'));
     } catch (error) {
       showNotification(t('resetError'), 'error');
