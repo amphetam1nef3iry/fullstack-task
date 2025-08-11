@@ -15,7 +15,8 @@ const initialItems = Array.from({ length: ITEMS_COUNT }, (_, i) => i + 1);
 let state = {
   items: initialItems,  // Исходные данные (не изменяются)
   selected: new Set(),  // Используем Set для быстрого поиска
-  lastSorted: []        // Отсортированный/измененный порядок
+  lastSorted: [],       // Отсортированный/измененный порядок
+  lastSearch: ''        // Последний поисковый запрос
 };
 
 // Мидлвара для логирования
@@ -92,9 +93,10 @@ app.post('/api/update-order', (req, res) => {
 // Сохранение состояния
 app.post('/api/save-state', (req, res) => {
   try {
-    const { selectedItems = [], sortedItems = [] } = req.body;
+    const { selectedItems = [], sortedItems = [], searchTerm = '' } = req.body;
     
     state.selected = new Set(selectedItems);
+    state.lastSearch = searchTerm;
     
     // Сохраняем изменения порядка только если переданы sortedItems
     if (sortedItems && sortedItems.length > 0) {
@@ -124,6 +126,7 @@ app.post('/api/reset-state', (req, res) => {
   try {
     state.selected = new Set();
     state.lastSorted = [];
+    state.lastSearch = '';
     
     res.json({ 
       success: true,
@@ -143,7 +146,8 @@ app.get('/api/initial-state', (req, res) => {
     selected: Array.from(state.selected),
     lastSorted: state.lastSorted.length > 0 
       ? state.lastSorted.slice(0, PAGE_SIZE) 
-      : state.items.slice(0, PAGE_SIZE)
+      : state.items.slice(0, PAGE_SIZE),
+    lastSearch: state.lastSearch
   });
 });
 
