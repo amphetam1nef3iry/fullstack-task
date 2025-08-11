@@ -14,7 +14,8 @@ i18n
           userMenu: "User Menu",
           search: "Search",
           saveState: "Save state",
-          revState: "Reset state"
+          resetState "Reset state",
+          orderUpdated: "Order updated seccessfull"
         }
       },
       ru: {
@@ -25,7 +26,8 @@ i18n
           userMenu: "Меню",
           search: "Поиск",
           saveState: "Сохранить состояние",
-          revState: "Сбросить состояние"
+          resetState: "Сбросить состояние",
+          orderUpdated: "Порядок успешно обновлен"
         }
       }
     },
