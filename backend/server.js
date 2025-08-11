@@ -56,18 +56,49 @@ app.get('/api/items', (req, res) => {
   }
 });
 
-// Сохранение состояния
-app.post('/api/save-state', (req, res) => {
+// Обновление порядка элементов
+app.post('/api/update-order', (req, res) => {
   try {
-    const { selectedItems = [], sortedItems = [] } = req.body;
+    const { movedItemId, targetItemId } = req.body;
     
-    state.selected = new Set(selectedItems);
-    state.lastSorted = sortedItems;
+    // Если есть измененный порядок - работаем с ним, иначе с исходным
+    const currentItems = state.lastSorted.length > 0 
+      ? [...state.lastSorted] 
+      : [...state.items];
+    
+    const fromIndex = currentItems.indexOf(movedItemId);
+    const toIndex = currentItems.indexOf(targetItemId);
+    
+    if (fromIndex === -1 || toIndex === -1) {
+      return res.status(400).json({ success: false, error: 'Invalid item IDs' });
+    }
+    
+    // Меняем элементы местами
+    [currentItems[fromIndex], currentItems[toIndex]] = 
+      [currentItems[toIndex], currentItems[fromIndex]];
+    
+    state.lastSorted = currentItems;
     
     res.json({ 
       success: true,
-      message: 'State saved successfully',
-      savedItems: sortedItems.length
+      message: 'Order updated successfully'
+    });
+  } catch (error) {
+    console.error('Error updating order:', error);
+    res.status(500).json({ success: false, error: 'Failed to update order' });
+  }
+});
+
+// Сохранение состояния
+app.post('/api/save-state', (req, res) => {
+  try {
+    const { selectedItems = [] } = req.body;
+    
+    state.selected = new Set(selectedItems);
+    
+    res.json({ 
+      success: true,
+      message: 'State saved successfully'
     });
   } catch (error) {
     console.error('Error saving state:', error);
@@ -102,7 +133,6 @@ app.get('/api/initial-state', (req, res) => {
       : state.items.slice(0, PAGE_SIZE)
   });
 });
-
 
 app.get('/api/all-items-ids', (req, res) => {
   try {
