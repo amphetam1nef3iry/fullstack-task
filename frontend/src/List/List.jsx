@@ -47,7 +47,7 @@ const List = ({ apiUrl }) => {
         setAllItemsIds(allItemsIdsData);
         setItems(itemsData);
       } catch (error) {
-        showNotification('Ошибка загрузки начального состояния', 'error');
+        showNotification(t('loadError'), 'error');
         console.error('Initial load error:', error);
       } finally {
         setLoading(false);
@@ -55,7 +55,7 @@ const List = ({ apiUrl }) => {
     };
 
     loadInitialData();
-  }, [apiUrl]);
+  }, [apiUrl, t]);
 
   const showNotification = (message, severity = 'success') => {
     setNotification({ open: true, message, severity });
@@ -71,19 +71,19 @@ const List = ({ apiUrl }) => {
         : [...prev, ...itemsData]);
       setPage(page);
     } catch (error) {
-      showNotification('Ошибка загрузки данных', 'error');
+      showNotification(t('fetchError'), 'error');
       console.error('Fetch error:', error);
     } finally {
       setLoading(false);
     }
-  }, [apiUrl]);
+  }, [apiUrl, t]);
 
   const saveState = async () => {
     try {
-      await ListService.saveState(apiUrl, selectedItems, items);
-      showNotification('Состояние успешно сохранено');
+      await ListService.saveState(apiUrl, Array.from(selectedItems));
+      showNotification(t('saveSuccess'));
     } catch (error) {
-      showNotification('Ошибка сохранения состояния', 'error');
+      showNotification(t('saveError'), 'error');
       console.error('Save error:', error);
     }
   };
@@ -93,9 +93,9 @@ const List = ({ apiUrl }) => {
       await ListService.resetState(apiUrl);
       setSelectedItems(new Set());
       await fetchItems(1, searchTerm, true);
-      showNotification('Состояние сброшено');
+      showNotification(t('resetSuccess'));
     } catch (error) {
-      showNotification('Ошибка сброса состояния', 'error');
+      showNotification(t('resetError'), 'error');
       console.error('Reset error:', error);
     }
   };
@@ -122,31 +122,57 @@ const List = ({ apiUrl }) => {
     }
   };
 
+  const onDragEnd = async (result) => {
+    if (!result.destination) return;
+
+    const movedItemId = items[result.source.index];
+    const targetItemId = items[result.destination.index];
+
+    try {
+      await ListService.updateOrder(apiUrl, movedItemId, targetItemId);
+      
+      // Обновляем локальное состояние для мгновенного отображения
+      const newItems = [...items];
+      const [removed] = newItems.splice(result.source.index, 1);
+      newItems.splice(result.destination.index, 0, removed);
+      setItems(newItems);
+      
+      showNotification(t('orderUpdated'));
+    } catch (error) {
+      showNotification(t('orderUpdateError'), 'error');
+      console.error('Drag and drop error:', error);
+    }
+  };
+
   const Row = ({ index, style }) => {
     const item = items[index];
     const isSelected = selectedItems.has(item);
     
     return (
-      <div style={style}>
-        <div className={`list-item-container ${isSelected ? 'selected' : ''}`}>
-          <Checkbox
-            checked={isSelected}
-            onChange={() => handleSelectItem(item)}
-          />
-          <span>{item}</span>
-        </div>
-      </div>
+      <Draggable draggableId={`item-${item}`} index={index}>
+        {(provided, snapshot) => (
+          <div
+            ref={provided.innerRef}
+            {...provided.draggableProps}
+            {...provided.dragHandleProps}
+            style={{
+              ...style,
+              ...provided.draggableProps.style,
+              backgroundColor: snapshot.isDragging ? '#f0f0f0' : 'transparent',
+              boxShadow: snapshot.isDragging ? '0 4px 8px rgba(0, 0, 0, 0.1)' : 'none'
+            }}
+          >
+            <div className={`list-item-container ${isSelected ? 'selected' : ''}`}>
+              <Checkbox
+                checked={isSelected}
+                onChange={() => handleSelectItem(item)}
+              />
+              <span>{item}</span>
+            </div>
+          </div>
+        )}
+      </Draggable>
     );
-  };
-
-  const onDragEnd = (result) => {
-    if (!result.destination) return;
-    
-    const newItems = [...items];
-    const [removed] = newItems.splice(result.source.index, 1);
-    newItems.splice(result.destination.index, 0, removed);
-    
-    setItems(newItems);
   };
 
   return (
@@ -175,7 +201,8 @@ const List = ({ apiUrl }) => {
                 {...provided.draggableProps}
                 {...provided.dragHandleProps}
                 ref={provided.innerRef}
-                className={`list-item-container ${snapshot.isDragging ? 'dragging' : ''}`}
+                style={provided.draggableProps.style}
+                className={`list-item-container dragging ${selectedItems.has(items[rubric.source.index]) ? 'selected' : ''}`}
               >
                 <Checkbox
                   checked={selectedItems.has(items[rubric.source.index])}
@@ -228,7 +255,7 @@ const List = ({ apiUrl }) => {
           disabled={loading}
           className="list-reset-button"
         >
-          {t('revState')}
+          {t('resetState')}
         </Button>
       </div>
 
