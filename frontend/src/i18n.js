@@ -14,7 +14,7 @@ i18n
           userMenu: "User Menu",
           search: "Search",
           saveState: "Save state",
-          resetState "Reset state",
+          resetState: "Reset state",
           orderUpdated: "Order updated seccessfull"
         }
       },
